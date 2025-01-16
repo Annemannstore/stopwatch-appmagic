@@ -1,1 +1,374 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Приложение Секундомер">
+    <title>Секундомер</title>
+    <style>
+        /* Общие стили */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #fff;
+            color: #333;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body.dark-mode {
+            background-color: #333;
+            color: #fff;
+        }
+
+        .stopwatch-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            flex-grow: 1;
+        }
+
+        .time {
+            font-size: 48px;
+            margin: 20px;
+        }
+
+        .start-stop,
+        .reset {
+            padding: 15px 30px;
+            font-size: 18px;
+            margin: 10px;
+            border: none;
+            cursor: pointer;
+            border-radius: 50%;
+            background-color: transparent;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .start-stop {
+            color: #007bff;
+        }
+
+        .start-stop.dark-mode {
+            color: #ff5722;
+        }
+
+        .reset {
+            color: #28a745;
+        }
+
+        .reset.dark-mode {
+            color: #8bc34a;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: transparent;
+            border: none;
+            color: #333;
+            font-size: 18px;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .theme-toggle.dark-mode {
+            color: #fff;
+        }
+
+        /* Нижняя панель с кнопками */
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
+            width: 100%;
+            background-color: #f1f1f1;
+            transition: background-color 0.3s;
+        }
+
+        .bottom-nav.dark-mode {
+            background-color: #444;
+        }
+
+        .bottom-nav button {
+            padding: 10px;
+            font-size: 14px;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            color: #333;
+        }
+
+        .bottom-nav button.active {
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .bottom-nav button.dark-mode {
+            color: #fff;
+        }
+
+        .bottom-nav button:not(.active).dark-mode {
+            color: #fff;
+        }
+
+        .bottom-nav button:not(.active):not(.dark-mode) {
+            color: #333;
+        }
+
+        /* Стиль для экрана настроек */
+        .settings-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            flex-grow: 1;
+            background-color: #fff;
+            color: #333;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 5;
+            display: none;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .settings-container.dark-mode {
+            background-color: #444;
+            color: #fff;
+        }
+
+        .settings-container button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .settings-container button.dark-mode {
+            color: #fff;
+            background-color: #333;
+        }
+
+        .settings-container button:not(.dark-mode) {
+            background-color: #f1f1f1;
+        }
+
+        /* Квадратики для включения режима magic */
+        .magic-toggle {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .magic-toggle.active {
+            background-color: #007bff;
+        }
+
+        .magic-toggle.inactive {
+            background-color: transparent;
+        }
+
+        /* Поля для выбора времени */
+        .time-select {
+            margin: 10px;
+        }
+
+        .time-select input,
+        .time-select select {
+            width: 80px;
+            padding: 5px;
+            font-size: 16px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle">🌙</button>
+    <div class="stopwatch-container">
+        <div class="time">00:00:00:00</div>
+        <div>
+            <button class="start-stop">Старт</button>
+            <button class="reset">Сброс</button>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <button class="alarm-btn">⏰ Будильник</button>
+        <button>🕒 Часы</button>
+        <button class="active">⏱ Секундомер</button>
+        <button>⏲ Таймер</button>
+    </div>
+
+    <!-- Экран настроек -->
+    <div class="settings-container">
+        <h2>Настройки</h2>
+        <div>
+            <label for="magic-toggle">Режим magic</label>
+            <div id="magic-toggle" class="magic-toggle inactive"></div>
+        </div>
+
+        <!-- Выбор, останавливать ли на секунде или только на милисекунде -->
+        <div>
+            <label for="stop-mode">Режим остановки:</label>
+            <select id="stop-mode">
+                <option value="both">Секунда и Милисекунда</option>
+                <option value="milliseconds">Только Милисекунда</option>
+            </select>
+        </div>
+
+        <!-- Поля для выбора времени -->
+        <div class="time-select">
+            <label for="stop-seconds">Секунда остановки:</label>
+            <input type="number" id="stop-seconds" min="0" max="59" value="30" disabled />
+        </div>
+        <div class="time-select">
+            <label for="stop-milliseconds">Милисекунда остановки:</label>
+            <input type="number" id="stop-milliseconds" min="1" max="59" value="50" disabled />
+        </div>
+
+        <!-- Поля для выбора нажатия кнопки остановки -->
+        <div class="time-select">
+            <label for="pause-click">Нажатие кнопки для остановки:</label>
+            <select id="pause-click" disabled>
+                <option value="first">Первое нажатие</option>
+                <option value="second">Второе нажатие</option>
+                <option value="third">Третье нажатие</option>
+            </select>
+        </div>
+
+        <button class="close-settings">Закрыть</button>
+    </div>
+
+    <script>
+        // Переключение темы
+        const themeToggleButton = document.querySelector('.theme-toggle');
+        const body = document.body;
+        const bottomNav = document.querySelector('.bottom-nav');
+        
+        themeToggleButton.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            bottomNav.classList.toggle('dark-mode');
+            themeToggleButton.classList.toggle('dark-mode');
+            themeToggleButton.textContent = body.classList.contains('dark-mode') ? '🌕' : '🌙';
+
+            // Переключение цвета кнопок в нижней панели
+            const bottomNavButtons = document.querySelectorAll('.bottom-nav button');
+            bottomNavButtons.forEach(button => {
+                if (button.classList.contains('active')) return;
+                button.classList.toggle('dark-mode', body.classList.contains('dark-mode'));
+            });
+        });
+
+        // Открытие экрана настроек
+        const alarmButton = document.querySelector('.alarm-btn');
+        const settingsContainer = document.querySelector('.settings-container');
+        const closeSettingsButton = document.querySelector('.close-settings');
+        
+        alarmButton.addEventListener('click', () => {
+            settingsContainer.style.display = 'flex';
+        });
+
+        closeSettingsButton.addEventListener('click', () => {
+            settingsContainer.style.display = 'none';
+        });
+
+        // Режим Magic
+        const magicToggleButton = document.getElementById('magic-toggle');
+        const stopSecondsInput = document.getElementById('stop-seconds');
+        const stopMillisecondsInput = document.getElementById('stop-milliseconds');
+        const pauseClickSelect = document.getElementById('pause-click');
+        const stopModeSelect = document.getElementById('stop-mode');
+        let magicMode = false;
+
+        magicToggleButton.addEventListener('click', () => {
+            magicMode = !magicMode;
+            magicToggleButton.classList.toggle('active', magicMode);
+            magicToggleButton.classList.toggle('inactive', !magicMode);
+
+            // Включение/выключение полей для настройки времени и типа нажатия
+            stopSecondsInput.disabled = !magicMode || stopModeSelect.value === 'milliseconds';
+            stopMillisecondsInput.disabled = !magicMode;
+            pauseClickSelect.disabled = !magicMode;
+        });
+
+        // Логика секундомера с миллисекундами
+        let timer;
+        let time = 0; // Время в миллисекундах
+        const timeDisplay = document.querySelector('.time');
+        const startStopButton = document.querySelector('.start-stop');
+        const resetButton = document.querySelector('.reset');
+        
+        let isRunning = false;
+        let stopSeconds = 30; // Значение по умолчанию
+        let stopMilliseconds = 50; // Значение по умолчанию
+        let pauseClick = 'first'; // Тип нажатия для остановки
+        let clickCount = 0; // Счётчик нажатий
+
+        function formatTime(ms) {
+            let hours = Math.floor(ms / 3600000); // Часы
+            let minutes = Math.floor((ms % 3600000) / 60000); // Минуты
+            let seconds = Math.floor((ms % 60000) / 1000); // Секунды
+            let milliseconds = Math.floor((ms % 1000) / 10); // Миллисекунды
+
+            // Ограничиваем каждый элемент времени (часы, минуты, секунды) значением от 00 до 59
+            hours = hours % 60;
+            minutes = minutes % 60;
+            seconds = seconds % 60;
+
+            // Возвращаем формат времени
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}:${String(milliseconds).padStart(2, '0')}`;
+        }
+
+        startStopButton.addEventListener('click', () => {
+            if (isRunning) {
+                clearInterval(timer);
+                startStopButton.textContent = 'Старт';
+            } else {
+                // Секундомер отсчитывает секунды и миллисекунды
+                const startTime = Date.now() - time; // начало отсчета с текущим временем
+                timer = setInterval(() => {
+                    time = Date.now() - startTime; // Обновление времени в миллисекундах
+                    timeDisplay.textContent = formatTime(time);
+
+                    // Остановка секундомера, если активирован режим magic
+                    if (magicMode && (stopModeSelect.value === 'both' ? time >= stopSeconds * 1000 + stopMilliseconds : time >= stopMilliseconds)) {
+                        clearInterval(timer);
+                        startStopButton.textContent = 'Старт';
+                        isRunning = false;
+                    }
+                }, 10); // Обновляем каждую десятую долю секунды
+                startStopButton.textContent = 'Пауза';
+            }
+            isRunning = !isRunning;
+        });
+
+        resetButton.addEventListener('click', () => {
+            clearInterval(timer);
+            time = 0;
+            timeDisplay.textContent = formatTime(time);
+            startStopButton.textContent = 'Старт';
+            isRunning = false;
+        });
+    </script>
+</body>
+</html>
 
